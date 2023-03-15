@@ -16,7 +16,7 @@ func setJson(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 }
 
-func getID(r *http.Request) (id string, has bool) {
+func ReadID(r *http.Request) (id string, has bool) {
 	urlParts := strings.Split(r.URL.String(), "/")
 	if len(urlParts) < 2 {
 		return "", false
@@ -40,7 +40,7 @@ func validateAndReadUser(r *http.Request) (user *model.UserDetails, err error) {
 }
 
 func validateAndReadID(r *http.Request) (string, error) {
-	id, present := getID(r)
+	id, present := ReadID(r)
 	if !present {
 		return "", errors.New("missing param id")
 	}
@@ -209,15 +209,6 @@ func endpoint(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("\n"))
 }
 
-//	func AddRoutes(router *http.ServeMux, ms []model.Middleware, app model.App) {
-//		commonMiddleware := ms[0]
-//		for i := 1; i < len(ms); i++ {
-//			commonMiddleware = func(handlerFunc http.HandlerFunc) http.HandlerFunc {
-//				return commonMiddleware(ms[i](handlerFunc))
-//			}
-//		}
-//		router.HandleFunc("/v1/user/", commonMiddleware(endpoint(app)))
-//	}
 func AddRoutes(router *http.ServeMux, ms Middleware) {
 	router.HandleFunc("/v1/user/", RequestLogger(ms(endpoint)))
 }
