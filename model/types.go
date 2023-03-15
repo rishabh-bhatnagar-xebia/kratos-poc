@@ -4,27 +4,27 @@ import (
 	"encoding/json"
 )
 
-type Group string
+type Role string
 
 const (
-	VIEWER   Group = "viewer"
-	ADMIN          = "admin"
-	MAKER          = "maker"
-	REVIEWER       = "reviewer"
+	VIEWER   Role = "viewer"
+	ADMIN         = "admin"
+	MAKER         = "maker"
+	REVIEWER      = "reviewer"
 )
 
-type User struct {
-	Username string  `json:"username"`
-	Password string  `json:"password"`
-	IsActive bool    `json:"isActive"`
-	Groups   []Group `json:"roles"`
+type UserDetails struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	IsActive bool   `json:"isActive"`
+	Roles    []Role `json:"roles"`
 }
 
 type SessionInfo struct {
 	Identity struct {
 		ID             string `json:"id"`
 		PublicMetadata struct {
-			Groups []Group `json:"groups"`
+			Roles []Role `json:"groups"`
 		} `json:"metadata_public"`
 	} `json:"identity"`
 }
@@ -56,18 +56,18 @@ func (us *UserSchema) MarshalJSON() ([]byte, error) {
 		isActive = false
 	}
 	out := struct {
-		Username string  `json:"username"`
-		IsActive bool    `json:"isActive"`
-		Groups   []Group `json:"roles"`
-		ID       string  `json:"id"`
+		Username string `json:"username"`
+		IsActive bool   `json:"isActive"`
+		Roles    []Role `json:"roles"`
+		ID       string `json:"id"`
 	}{
 		ID:       us.ID,
 		IsActive: isActive,
 		Username: us.Traits.Username,
-		Groups:   us.MetadataPubilc.Groups,
+		Roles:    us.MetadataPubilc.Roles,
 	}
-	if len(out.Groups) == 0 {
-		out.Groups = make([]Group, 0)
+	if len(out.Roles) == 0 {
+		out.Roles = make([]Role, 0)
 	}
 	return json.Marshal(out)
 }
@@ -86,7 +86,7 @@ type UserPassword struct {
 }
 
 type UserPublicMetadata struct {
-	Groups []Group `json:"groups"`
+	Roles []Role `json:"groups"`
 }
 
 type UserTrait struct {

@@ -66,7 +66,7 @@ func AdminMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		if !si.OfGroup(model.ADMIN) {
+		if !si.OfRole(model.ADMIN) {
 			// todo: refactor error message if we're giving away more information
 			http.Error(writer, fmt.Sprintf("only %s can access this endpoint", model.ADMIN), 401)
 			return

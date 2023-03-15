@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func (group *Group) Validate() error {
+func (group *Role) Validate() error {
 	switch *group {
 	case VIEWER, ADMIN, MAKER, REVIEWER:
 		return nil
@@ -14,8 +14,8 @@ func (group *Group) Validate() error {
 	}
 }
 
-func (si *SessionInfo) OfGroup(target Group) bool {
-	for _, group := range si.Identity.PublicMetadata.Groups {
+func (si *SessionInfo) OfRole(target Role) bool {
+	for _, group := range si.Identity.PublicMetadata.Roles {
 		if group == target {
 			return true
 		}
@@ -24,10 +24,10 @@ func (si *SessionInfo) OfGroup(target Group) bool {
 }
 
 func (si *SessionInfo) Validate() error {
-	return validateGroups(si.Identity.PublicMetadata.Groups)
+	return validateRoles(si.Identity.PublicMetadata.Roles)
 }
 
-func validateGroups(groups []Group) error {
+func validateRoles(groups []Role) error {
 	for _, group := range groups {
 		err := group.Validate()
 		if err != nil {
@@ -37,9 +37,9 @@ func validateGroups(groups []Group) error {
 	return nil
 }
 
-func (user *User) Validate() error {
-	if len(user.Groups) < 1 {
+func (user *UserDetails) Validate() error {
+	if len(user.Roles) < 1 {
 		return errors.New("there must be at least one group")
 	}
-	return validateGroups(user.Groups)
+	return validateRoles(user.Roles)
 }

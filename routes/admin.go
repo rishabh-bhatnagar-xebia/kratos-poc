@@ -42,10 +42,10 @@ func validateID(id string) error {
 	return nil
 }
 
-func validateAndGetUser(w http.ResponseWriter, r *http.Request) (user *model.User, err error) {
+func validateAndGetUser(w http.ResponseWriter, r *http.Request) (user *model.UserDetails, err error) {
 	setJson(w)
 
-	// decode the request body into a User struct
+	// decode the request body into a UserDetails struct
 	err = json.NewDecoder(r.Body).Decode(&user)
 
 	if err != nil {
@@ -63,7 +63,7 @@ func validateAndGetUser(w http.ResponseWriter, r *http.Request) (user *model.Use
 }
 
 // for all attributes
-func validateAndGetUserAll(w http.ResponseWriter, r *http.Request) (user *model.User, err error) {
+func validateAndGetUserAll(w http.ResponseWriter, r *http.Request) (user *model.UserDetails, err error) {
 	user, err = validateAndGetUser(w, r)
 	if err != nil {
 		return
@@ -90,30 +90,31 @@ func validateAndGetID(w http.ResponseWriter, r *http.Request) (string, bool) {
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("in create user")
 	user, err := validateAndGetUserAll(w, r)
-	fmt.Println(err)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	fmt.Printf("user found %+v\n", user)
 
-	w.Write([]byte("will create a valid user\n"))
 	userJson, err := json.Marshal(model.UserSchema{
 		Traits: model.UserTrait{
 			Username: user.Username,
 		},
 		MetadataPubilc: model.UserPublicMetadata{
-			Groups: user.Groups,
+			Roles: user.Roles,
 		},
-		Creds: model.Credentials{Password: model.CredentialPassword{model.UserPassword{Password: "password"}}},
+		Creds: model.Credentials{Password: model.CredentialPassword{Config: model.UserPassword{Password: "password"}}},
 	})
-	fmt.Println(string(userJson))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	resp, err := requestJsonWithCookies(http.MethodPost, KRATOS_ADMIN_URI+"/admin/identities", bytes.NewReader(userJson), r.Cookies())
+
+	resp, err := requestJsonWithCookies(
+		http.MethodPost,
+		KRATOS_ADMIN_URI+"/admin/identities",
+		bytes.NewReader(userJson),
+		r.Cookies(),
+	)
 	b, err := io.ReadAll(resp.Body)
 
 	var si model.SessionInfo
@@ -170,11 +171,11 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 			Value:     user.IsActive,
 		})
 	}
-	if len(user.Groups) == 0 {
+	if len(user.Roles) == 0 {
 		patch = append(patch, PatchRequest{
 			Operation: REPLACE,
 			Path:      "/metadata_public",
-			Value:     user.Groups,
+			Value:     user.Roles,
 		})
 	}
 
