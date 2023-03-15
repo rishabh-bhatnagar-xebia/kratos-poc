@@ -22,33 +22,13 @@ func getID(r *http.Request) (id string, has bool) {
 		return "", false
 	}
 	return urlParts[len(urlParts)-1], true
-
-	// use below if id is given in ?id= form
-	//if !r.URL.Query().Has("id") {
-	//	return "", false
-	//}
-	//return r.URL.Query().Get("id"), true
 }
 
-func validateID(id string) error {
-	if strings.ContainsRune(id, '?') {
-		return errors.New("id cannot have non-alphanumeric chars")
-	}
-	if len(id) == 0 {
-		return errors.New("id cannot be empty")
-	}
-	return nil
-}
-
-func validateAndGetUser(w http.ResponseWriter, r *http.Request) (user *model.UserDetails, err error) {
-	setJson(w)
-
+func validateAndReadUser(r *http.Request) (user *model.UserDetails, err error) {
 	// decode the request body into a UserDetails struct
 	err = json.NewDecoder(r.Body).Decode(&user)
-
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return nil, err
 	}
 
 	// validate the user details
@@ -56,39 +36,23 @@ func validateAndGetUser(w http.ResponseWriter, r *http.Request) (user *model.Use
 	if err != nil {
 		return user, err
 	}
-
 	return
 }
 
-// for all attributes
-func validateAndGetUserAll(w http.ResponseWriter, r *http.Request) (user *model.UserDetails, err error) {
-	user, err = validateAndGetUser(w, r)
-	if err != nil {
-		return
-	}
-	if len(user.Username) == 0 {
-		// return the partially filled data in the user
-		return user, errors.New("expected a valid username")
-	}
-	return user, nil
-}
-
-func validateAndGetID(w http.ResponseWriter, r *http.Request) (string, bool) {
+func validateAndReadID(r *http.Request) (string, error) {
 	id, present := getID(r)
 	if !present {
-		http.Error(w, "missing param id", http.StatusBadRequest)
-		return "", false
+		return "", errors.New("missing param id")
 	}
-	err := validateID(id)
+	err := model.ValidateID(id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return "", false
+		return "", err
 	}
-	return id, true
+	return id, nil
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
-	user, err := validateAndGetUserAll(w, r)
+	user, err := validateAndReadUser(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -113,14 +77,15 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		bytes.NewReader(userJson),
 		r.Cookies(),
 	)
-	b, err := io.ReadAll(resp.Body)
 
-	var si model.SessionInfo
-	err = json.NewDecoder(bytes.NewReader(b)).Decode(&si)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if resp.StatusCode == http.StatusCreated {
+		w.WriteHeader(http.StatusCreated)
 		return
 	}
+
+	b, err := io.ReadAll(resp.Body)
+	// echo the json error message from kratos verbatim
+	setJson(w)
 	w.Write(b)
 }
 
@@ -134,17 +99,17 @@ func requestJsonWithCookies(method string, url string, body io.Reader, cookies [
 		req.AddCookie(c)
 	}
 	return client.Do(req)
-
 }
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
-	user, err := validateAndGetUser(w, r)
+	user, err := validateAndReadUser(r)
 	if err != nil {
 		return
 	}
 
-	id, valid := validateAndGetID(w, r)
-	if !valid {
+	id, err := validateAndReadID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -204,8 +169,9 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
-	id, valid := validateAndGetID(w, r)
-	if !valid {
+	id, err := validateAndReadID(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 

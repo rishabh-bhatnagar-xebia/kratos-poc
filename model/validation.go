@@ -3,6 +3,7 @@ package model
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 func (group *Role) Validate() error {
@@ -41,5 +42,18 @@ func (user *UserDetails) Validate() error {
 	if len(user.Roles) < 1 {
 		return errors.New("there must be at least one group")
 	}
+	if len(user.Username) == 0 {
+		return errors.New("expected a valid username")
+	}
 	return validateRoles(user.Roles)
+}
+
+func ValidateID(id string) error {
+	if strings.ContainsRune(id, '?') {
+		return errors.New("id cannot have non-alphanumeric chars")
+	}
+	if len(id) == 0 {
+		return errors.New("id cannot be empty")
+	}
+	return nil
 }
