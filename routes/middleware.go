@@ -29,7 +29,6 @@ func makeRequest(url string, cookies string, method string) string {
 	}
 	defer resp.Body.Close()
 
-	// Print the response status code and body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		panic(err)
@@ -45,12 +44,10 @@ func AdminMiddleware(next http.HandlerFunc) http.HandlerFunc {
 		var cookies string
 
 		cookies = request.Header.Get("Cookie")
-		fmt.Println("cookies", cookies)
 
 		// handle 401
 		content := makeRequest(constants.KratosPublicApi+"sessions/whoami", cookies, http.MethodGet)
 		if strings.Contains(content, "401") {
-			fmt.Println(content)
 			http.Error(writer, "unauthorized\n", 401)
 			return
 		}
@@ -79,7 +76,6 @@ func AdminMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 func RequestLogger(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("got a %s request\n", r.Method)
 		//w.Write([]byte(fmt.Sprintf("received a %s request\n", r.Method)))
 		next.ServeHTTP(w, r)
 	}

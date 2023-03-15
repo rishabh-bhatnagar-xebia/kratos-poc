@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"kratos-rbac/model"
 	"net/http"
@@ -140,7 +139,6 @@ func requestJsonWithCookies(method string, url string, body io.Reader, cookies [
 }
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("inside update user")
 	user, err := validateAndGetUser(w, r)
 	if err != nil {
 		return
@@ -150,8 +148,6 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	if !valid {
 		return
 	}
-
-	fmt.Printf("user found %+v", user)
 
 	w.Write([]byte("will update person with id: " + id))
 
@@ -180,7 +176,6 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	content, err := GetPatchBody(patch)
-	fmt.Println("content", string(content), err)
 	resp, err := requestJsonWithCookies(http.MethodPatch, KRATOS_ADMIN_URI+"/admin/identities/"+id, bytes.NewReader(content), r.Cookies())
 	content, err = io.ReadAll(resp.Body)
 	w.Write(content)
@@ -192,14 +187,12 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest) // 400 or 500?
 	}
 	content, _ := io.ReadAll(resp.Body)
-	fmt.Println(string(content))
 	var users []model.UserSchema
 	err = json.Unmarshal(content, &users)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	fmt.Printf("%+v\n", users)
 
 	content, err = json.Marshal(users)
 	if err != nil {
@@ -212,15 +205,11 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("In delete user")
 	id, valid := validateAndGetID(w, r)
 	if !valid {
 		return
 	}
 
-	fmt.Println("user with id=" + id + " will be deleted\n")
-	// todo: delete user with id=$id
-	fmt.Printf("deleting user with user id %s\n", id)
 	resp, err := requestJsonWithCookies(http.MethodDelete, KRATOS_ADMIN_URI+"/admin/identities/"+id, strings.NewReader(""), r.Cookies())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError) // 500 or 400?
@@ -229,7 +218,6 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	rb, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("error occured while deleting")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -241,7 +229,6 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func endpoint(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("serving user request", r.Method)
 	switch r.Method {
 	case http.MethodPost:
 		CreateUser(w, r)

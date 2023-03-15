@@ -2,7 +2,6 @@ package routes
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 type PatchOperation string
@@ -25,6 +24,5 @@ type Patch []PatchRequest
 
 func GetPatchBody(patch Patch) ([]byte, error) {
 	content, err := json.Marshal(patch)
-	fmt.Println(string(content))
 	return content, err
 }
