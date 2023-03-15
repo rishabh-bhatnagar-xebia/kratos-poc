@@ -37,11 +37,11 @@ const (
 )
 
 type UserSchema struct {
-	ID             string             `json:"id"`
+	ID             string             `json:"id,omitempty"`
 	Traits         UserTrait          `json:"traits"`
 	MetadataPubilc UserPublicMetadata `json:"metadata_public"`
 	Creds          Credentials        `json:"credentials"`
-	State          UserSchemaState    `json:"state"`
+	State          UserSchemaState    `json:"state,omitempty"`
 }
 
 func (us *UserSchema) MarshalJSON() ([]byte, error) {
