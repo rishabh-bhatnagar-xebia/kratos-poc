@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"kratos-rbac/constants"
 	"kratos-rbac/model"
 	"net/http"
 	"strings"
 )
-
-const KRATOS_ADMIN_URI string = "http://127.0.0.1:4434"
 
 func setJson(w http.ResponseWriter) {
 	// set content type to JSON
@@ -110,7 +109,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := requestJsonWithCookies(
 		http.MethodPost,
-		KRATOS_ADMIN_URI+"/admin/identities",
+		constants.URL_KRATOS_IDENTITIES,
 		bytes.NewReader(userJson),
 		r.Cookies(),
 	)
@@ -176,13 +175,13 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	content, err := GetPatchBody(patch)
-	resp, err := requestJsonWithCookies(http.MethodPatch, KRATOS_ADMIN_URI+"/admin/identities/"+id, bytes.NewReader(content), r.Cookies())
+	resp, err := requestJsonWithCookies(http.MethodPatch, constants.URL_KRATOS_IDENTITIES+id, bytes.NewReader(content), r.Cookies())
 	content, err = io.ReadAll(resp.Body)
 	w.Write(content)
 }
 
 func ListUsers(w http.ResponseWriter, r *http.Request) {
-	resp, err := requestJsonWithCookies(http.MethodGet, KRATOS_ADMIN_URI+"/admin/identities", nil, nil)
+	resp, err := requestJsonWithCookies(http.MethodGet, constants.URL_KRATOS_IDENTITIES, nil, nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest) // 400 or 500?
 	}
@@ -210,7 +209,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := requestJsonWithCookies(http.MethodDelete, KRATOS_ADMIN_URI+"/admin/identities/"+id, strings.NewReader(""), r.Cookies())
+	resp, err := requestJsonWithCookies(http.MethodDelete, constants.URL_KRATOS_IDENTITIES+id, strings.NewReader(""), r.Cookies())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError) // 500 or 400?
 		return
