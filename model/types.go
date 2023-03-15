@@ -1,8 +1,6 @@
 package model
 
-import (
-	"encoding/json"
-)
+import "encoding/json"
 
 type Role string
 
@@ -13,6 +11,7 @@ const (
 	REVIEWER      = "reviewer"
 )
 
+// UserDetails wraps information that user provides as an input
 type UserDetails struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -36,7 +35,9 @@ const (
 	INACTIVE                 = "inactive"
 )
 
-type UserSchema struct {
+// KratosUserSchema represents User Schema struct of the identity as
+// returned by kratos
+type KratosUserSchema struct {
 	ID             string             `json:"id,omitempty"`
 	Traits         UserTrait          `json:"traits"`
 	MetadataPubilc UserPublicMetadata `json:"metadata_public"`
@@ -44,32 +45,12 @@ type UserSchema struct {
 	State          UserSchemaState    `json:"state,omitempty"`
 }
 
-func (us *UserSchema) MarshalJSON() ([]byte, error) {
-	// skips the hidden attributes like password before converting to json
-	type userSchemaOut struct {
-	}
-
-	var isActive bool
-	if us.State == ACTIVE {
-		isActive = true
-	} else {
-		isActive = false
-	}
-	out := struct {
-		Username string `json:"username"`
-		IsActive bool   `json:"isActive"`
-		Roles    []Role `json:"roles"`
-		ID       string `json:"id"`
-	}{
-		ID:       us.ID,
-		IsActive: isActive,
-		Username: us.Traits.Username,
-		Roles:    us.MetadataPubilc.Roles,
-	}
-	if len(out.Roles) == 0 {
-		out.Roles = make([]Role, 0)
-	}
-	return json.Marshal(out)
+// FilteredUserSchema is KratosUserSchema without sensitive values
+type FilteredUserSchema struct {
+	ID             string             `json:"id"`
+	Traits         UserTrait          `json:"traits"`
+	MetadataPubilc UserPublicMetadata `json:"metadata_public"`
+	State          UserSchemaState    `json:"state,omitempty"`
 }
 
 type Credentials struct {
@@ -91,4 +72,38 @@ type UserPublicMetadata struct {
 
 type UserTrait struct {
 	Username string `json:"username"`
+}
+
+// Filter excludes all the sensitive information
+func (us *KratosUserSchema) Filter() FilteredUserSchema {
+	return FilteredUserSchema{
+		ID:             us.ID,
+		Traits:         us.Traits,
+		MetadataPubilc: us.MetadataPubilc,
+		State:          us.State,
+	}
+}
+
+func (fus *FilteredUserSchema) MarshalJSON() ([]byte, error) {
+	var isActive bool
+	if fus.State == ACTIVE {
+		isActive = true
+	} else {
+		isActive = false
+	}
+	out := struct {
+		Username string `json:"username"`
+		IsActive bool   `json:"isActive"`
+		Roles    []Role `json:"roles"`
+		ID       string `json:"id"`
+	}{
+		ID:       fus.ID,
+		IsActive: isActive,
+		Username: fus.Traits.Username,
+		Roles:    fus.MetadataPubilc.Roles,
+	}
+	if len(out.Roles) == 0 {
+		out.Roles = make([]Role, 0)
+	}
+	return json.Marshal(out)
 }
